@@ -27,7 +27,7 @@ custom:
 
 functions:
   server:
-    handler: app.handler
+    handler: index.handler
     events:
       - http:
           path: /

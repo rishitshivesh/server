@@ -4,6 +4,8 @@ const cors = require("cors");
 const serverless = require("serverless-http");
 
 const user = require("./routes/user.routes");
+const images = require("./routes/image.routes");
+
 // const tickets = require("./routes/ticket.routes");
 // const event = require("./routes/event.routes");
 const port = process.env.PORT || 4000;
@@ -18,6 +20,8 @@ app.use(express.json());
 app.use(cors());
 
 app.use("/api/v1", user);
+app.use("/api/v1", images);
+
 // app.use("/api/v1", tickets);
 // app.use("/api/v1", event);
 

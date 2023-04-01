@@ -19,6 +19,7 @@
     "jsonwebtoken": "^9.0.0",
     "nodemon": "^2.0.22",
     "randomstring": "^1.2.3",
-    "serverless-http": "^3.2.0"
+    "serverless-http": "^3.2.0",
+    "sharp": "^0.32.0"
   }
 }

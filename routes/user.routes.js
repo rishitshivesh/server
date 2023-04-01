@@ -43,10 +43,11 @@ router.post("/users/register", async (req, res) => {
       city,
       state,
       pincode,
-      governmentIdType,
+      country,
       governmentIdNumber,
       role,
       gender,
+      token,
       uid,
     } = req.body;
     console.log(req.body);
@@ -60,10 +61,11 @@ router.post("/users/register", async (req, res) => {
       !city ||
       !state ||
       !pincode ||
-      !governmentIdType ||
+      !country ||
       !governmentIdNumber ||
       !uid ||
-      !gender
+      !gender ||
+      !token
     ) {
       return res.status(400).json(Response(400, "Missing parameters"));
     }
@@ -91,11 +93,12 @@ router.post("/users/register", async (req, res) => {
       city,
       state,
       pincode,
-      governmentIdType,
+      country,
       governmentIdNumber,
       role,
       uid,
       gender,
+      token,
       role: role ? role : "user",
       createdOn: new Date().toISOString(),
     };
@@ -135,130 +138,29 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post("/user/update/:id", isAuthenticated, async (req, res) => {
+// make update route to add account number to userdata
+
+router.put("/users/:email", async (req, res) => {
   try {
-    const emailId = req.params.id;
-    console.log(emailId);
-    const user = await DB.get("finease", `user#${emailId}`, TABLE_NAME);
-    if (!user) {
-      return res.status(400).json(Response(400, "User does not exist"));
+    const { email } = req.params;
+    // const { accountNumber } = req.body;
+    // generate bank account number
+
+    const accountNumber = "finease-" + Math.floor(20000 + Math.random() * 9999);
+
+    if (!email || !accountNumber) {
+      return res.status(400).json(Response(400, "Missing parameters"));
     }
-    var pass = null;
-    if (req.body.password) {
-      const pwd = await hash(req.body.password);
-      pass = pwd;
+    const user = await DB.get("finease", `user#${email}`, TABLE_NAME);
+    if (!user) {
+      return res.status(400).json(Response(400, "User not found"));
     }
     const updatedUser = {
       ...user,
-      ...req.body,
-      uID: user.uID,
-      pk: "finease",
-      sk: `user#${emailId}`,
-      role: user.role,
-      accomodation: user.accomodation,
-      emailId: req.params.id,
-      password: pass ? pass : user.password,
-      updatedOn: new Date().toISOString(),
+      accountNumber,
     };
-    const result = await DB.put(updatedUser, TABLE_NAME);
-    return res
-      .status(200)
-      .json(Response(200, "User updated successfully", result));
-  } catch (error) {
-    return res.status(500).json(Response(500, "Internal Server Error", error));
-  }
-});
-
-// get all events of a user by emailId
-
-router.get("/user/events/:emailId", isAuthenticated, async (req, res) => {
-  try {
-    const { emailId } = req.params;
-    const user = await DB.get("finease", `user#${emailId}`, TABLE_NAME);
-    if (!user) {
-      return res.status(400).json(Response(400, "User does not exist"));
-    }
-    const events = await DB.queryBeginsWith(
-      "finease",
-      `userEvent#${emailId}`,
-      TABLE_NAME
-    );
-
-    var list = [];
-    for (let i in events) {
-      console.log(events[i]);
-      var event = await DB.queryWithFilter(
-        "finease",
-        `event`,
-        "id",
-        events[i].eventId,
-        TABLE_NAME
-      );
-      list.push(...event);
-      console.log(list);
-    }
-    return res
-      .status(200)
-      .json(
-        Response(200, `All events of ${user.fullName} (${user.emailId})`, list)
-      );
-  } catch (error) {
-    return res.status(500).json(Response(500, "Internal Server Error", error));
-  }
-});
-
-router.get("/tempPassVerify", async (req, res) => {
-  const { token } = req.body;
-  //   const hashedPass = await hash(process.env.TICKET_PAYLOAD_TOKEN);
-  const isMatch = await verifyHash(process.env.TICKET_PAYLOAD_TOKEN, token);
-  //   console.log(token);
-  return res.status(200).json(Response(200, "Success", isMatch));
-});
-
-router.get("/accomodation", async (req, res) => {
-  try {
-    const data = await DB.queryBeginsWith(
-      "finease",
-      "accomodation",
-      TABLE_NAME
-    );
-    // console.log(data);
-    var resData = {
-      0: { male: 50, female: 50 },
-      1: { male: 50, female: 50 },
-      2: { male: 50, female: 50 },
-      3: { male: 50, female: 50 },
-    };
-    // console.log(data);
-    if (data.length && data.length > 0) {
-      for (let i in data) {
-        console.log(data[i]);
-        console.log(resData[2]["male"]);
-        const gender = data[i]["gender"].toLowerCase();
-        resData[data[i]["day"]][gender] -= 1;
-      }
-    }
-
-    console.log(resData);
-
-    return res.status(200).json(Response(200, "Success", resData));
-  } catch (error) {
-    return res.status(500).json(Response(500, "Internal Server Error", error));
-  }
-});
-
-router.get("/accomodation/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const data = await DB.queryBeginsWith(
-      "finease",
-      `accomodation#${id}`,
-      TABLE_NAME
-    );
-    // console.log(data);
-    // const resData = JSON.parse(data.accomodation)
-
-    return res.status(200).json(Response(200, "Success", data));
+    await DB.put(updatedUser, TABLE_NAME);
+    return res.status(200).json(Response(200, "Success", updatedUser));
   } catch (error) {
     return res.status(500).json(Response(500, "Internal Server Error", error));
   }
